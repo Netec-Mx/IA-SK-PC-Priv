@@ -24,7 +24,9 @@ En esta práctica se construirá una batería reproducible para el workflow inte
 
 ## Prerrequisitos
 
-**Conocimientos requeridos**
+Cumpla este apartado antes del Paso 1. El bloque de comprobación debe terminar sin errores. Si falta un componente, deténgase y pida al instructor que complete la preparación. No ejecute `git config` ni `git init`. Esta práctica no crea un commit salvo que el instructor lo autorice al final.
+
+### Conocimientos requeridos
 
 - Conocimientos generales sobre inteligencia artificial generativa y modelos de lenguaje.
 - Experiencia utilizando ChatGPT y Codex.
@@ -32,15 +34,22 @@ En esta práctica se construirá una batería reproducible para el workflow inte
 - Conocimientos básicos de Git, estructuras de archivos, Markdown y scripting.
 - Conocimientos generales sobre APIs y JSON.
 - Conocimientos básicos de pruebas positivas, negativas, ambiguas y de regresión.
+- La Skill principal `consultar-estandares-tecnicos` versión `0.4.0` y la Skill `investigacion-fallos-codex` con el workflow compuesto `0.2.0` de la práctica 9.
 - No se requiere experiencia previa desarrollando Agent Skills.
 
-**Accesos requeridos**
+### Accesos requeridos
 
-- Acceso al entorno de OpenAI preparado por el curso, incluidos ChatGPT y Codex.
-- Acceso al entorno AWS preparado con la API publicada mediante Amazon API Gateway y la capacidad de Amazon Bedrock indicada por el instructor.
-- Acceso de lectura al repositorio y al workflow creado en la práctica 9.
-- Permisos configurados por la organización para consumir la API autorizada, sin exponer ni almacenar secretos, claves, tokens o credenciales.
-- Mecanismo autorizado para usar simulaciones controladas de respuestas de dependencias externas.
+- Windows 11 de 64 bits, 8 GB de RAM, 2 GB libres y permiso de escritura sobre el repositorio `skill-documentacion-tecnica`.
+- PowerShell 7 o posterior, abierto con `pwsh.exe`. En Visual Studio Code, el perfil de terminal debe usar ese ejecutable. Windows PowerShell 5.1 no ejecuta estos comandos.
+- Git 2.44.0 o posterior. El repositorio ya debe existir, con `SKILL.md`, `referencias/`, `entradas/`, `salidas/` y `evidencia/`.
+- Python 3.12.1 o posterior de la serie 3.12, con el lanzador `py`, de forma que `py -3.12 --version` responda.
+- `curl.exe` 8.7.1 o posterior. Esta batería no realiza llamadas HTTP reales; solo se comprueba la versión en el prep.
+- Consola y archivos en UTF-8. Visual Studio Code 1.92.2 o posterior es opcional.
+- ChatGPT y Codex en la edición asignada por la organización, para ejecutar los casos simulados de los pasos 4 y 6. Si el comando `codex` no está instalado, use la interfaz preparada por el curso. No ejecute `codex` sin argumentos dentro de un bloque: abriría una sesión interactiva.
+- Práctica 9 terminada: `skills/investigacion-fallos-codex/SKILL.md` con la sección **Workflow compuesto: API Gateway y agente de Amazon Bedrock**; `evidencia/practica9/workflow-config.json`, `validar_workflow.py`, `matriz-responsabilidades.md`, `versionamiento.md`, `resultado-validacion-workflow.json` y `revision-codex.md` sin marcadores `[DOCUMENTAR…]`. `practica6/codigo/descuentos.py` debe seguir igual a `evidencia/practica6/hash-descuentos.txt`.
+- Amazon API Gateway y Bedrock no se invocan en esta práctica: todas las dependencias externas se simulan en `bateria-pruebas.json` con `external_execution: prohibited`.
+- No copie secretos, claves, tokens, encabezados de autenticación ni datos sensibles en archivos, comandos, resultados o commits.
+- No se utilizan Microsoft 365 Copilot ni servicios locales adicionales (contenedores, bases de datos ni puertos abiertos).
 
 ## Entorno de Laboratorio
 
@@ -54,10 +63,11 @@ Utilice exclusivamente el directorio de trabajo asignado por el entorno del curs
 | Git | 2.44.0 | x86_64 o ARM64; registrar la detectada | <https://git-scm.com/docs/git/2.44.0> |
 | curl | 8.7.1 | x86_64 o ARM64; registrar la detectada | <https://curl.se/docs/manpage.html> |
 | Visual Studio Code | 1.92.2 | x86_64 o ARM64; registrar la detectada | <https://code.visualstudio.com/updates/v1_92> |
-| ChatGPT | [VERSIÓN POR VALIDAR], servicio SaaS | No aplica | <https://help.openai.com/en/articles/9260256-using-the-chatgpt-agent> |
-| OpenAI Codex | [VERSIÓN POR VALIDAR], servicio SaaS | No aplica | <https://openai.com/codex/> |
-| Amazon API Gateway | [VERSIÓN POR VALIDAR], servicio administrado | No aplica | <https://docs.aws.amazon.com/apigateway/> |
-| Amazon Bedrock Agents | [VERSIÓN POR VALIDAR], servicio administrado | No aplica | <https://docs.aws.amazon.com/bedrock/latest/userguide/agents.html> |
+| ChatGPT | Edición asignada por la organización; opcional para revisión | No aplica | <https://help.openai.com/en/articles/6825453-chatgpt-release-notes> |
+| OpenAI Codex | Edición asignada por la organización | No aplica | <https://developers.openai.com/codex/> |
+| Amazon API Gateway | Contrato preparado por el instructor; no se invoca en esta batería | No aplica | <https://docs.aws.amazon.com/apigateway/latest/developerguide/welcome.html> |
+| Amazon Bedrock Agents | Capacidad preparada por el instructor; no se invoca en esta batería | No aplica | <https://docs.aws.amazon.com/bedrock/latest/userguide/agents.html> |
+| Agent Skills | Especificación vigente: frontmatter con `name` y `description` | No aplica | <https://agentskills.io/specification> |
 
 > **Convención terminológica:** una **instrucción** persistente pertenece a `SKILL.md` y define el comportamiento reusable de la Skill. Un **prompt** es el mensaje que el estudiante envía durante un caso de prueba. Un **mensaje de sistema** es una configuración controlada por la plataforma y no debe modificarse durante esta práctica. No solicite ni registre razonamiento interno; evalúe únicamente entradas, acciones observables, salidas y evidencia autorizada.
 
@@ -69,34 +79,108 @@ Conserve la Skill principal versión **`0.4.0`**, las Skills independientes y la
 
 Use Python 3.12 con el lanzador `py` y guarde los archivos en UTF-8 sin BOM. Los comandos emplean `Set-Content -Encoding utf8`; las evidencias de línea base se copian completas y se marcan de solo lectura para no truncar los controles heredados. El directorio de evidencia se protege mediante ACL de Windows para el usuario actual, siguiendo las prácticas 8 y 9. Si una política institucional impide ese ajuste, use el directorio protegido que prepare el instructor.
 
-Ejecute la comprobación inicial desde el directorio asignado. El repositorio y la estructura reutilizada de la práctica anterior son `skill-documentacion-tecnica`, `skills/investigacion-fallos-codex/` y `evidencia/practica9/`.
+Ejecute una sola vez el bloque de preparación. Al copiar bloques con here-strings, el cierre `'@` debe quedar al inicio de su línea.
 
 ```powershell
+$PSVersionTable.PSVersion
+if ($PSVersionTable.PSVersion.Major -lt 7) { throw 'Abra PowerShell 7 o posterior con pwsh.exe. Windows PowerShell 5.1 no ejecuta esta práctica.' }
+[Console]::InputEncoding = [System.Text.UTF8Encoding]::new($false)
+[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+$OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+$env:PYTHONIOENCODING = 'utf-8'
+
 if ((Split-Path -Leaf (Get-Location).Path) -ne 'skill-documentacion-tecnica') {
+    if (-not (Test-Path -LiteralPath '.\skill-documentacion-tecnica' -PathType Container)) { throw 'No se encontró skill-documentacion-tecnica. Complete las prácticas 1 a 9.' }
     Set-Location -LiteralPath '.\skill-documentacion-tecnica'
 }
-$PSVersionTable.PSVersion
-if ($PSVersionTable.PSVersion.Major -lt 7) { throw 'Abra PowerShell 7 o posterior antes de continuar.' }
-$env:PYTHONIOENCODING = 'utf-8'
-$OutputEncoding = [System.Text.UTF8Encoding]::new($false)
-Get-Location
-git status --short
-git branch --show-current
-py -3.12 --version
-git --version
-curl.exe --version | Select-Object -First 1
-foreach ($ruta in '.\SKILL.md', '.\skills\investigacion-fallos-codex\SKILL.md', '.\evidencia\practica9\workflow-config.json', '.\evidencia\practica9\validar_workflow.py', '.\evidencia\practica9\matriz-responsabilidades.md', '.\evidencia\practica9\versionamiento.md') {
-    if (-not (Test-Path -LiteralPath $ruta -PathType Leaf)) { throw "Falta $ruta. Complete la práctica 9 antes de continuar." }
+foreach ($ruta in '.\SKILL.md', '.\referencias', '.\entradas', '.\salidas', '.\evidencia', '.\skills\investigacion-fallos-codex\SKILL.md', '.\evidencia\practica9\workflow-config.json', '.\evidencia\practica9\validar_workflow.py', '.\evidencia\practica9\matriz-responsabilidades.md', '.\evidencia\practica9\versionamiento.md', '.\evidencia\practica9\resultado-validacion-workflow.json', '.\evidencia\practica9\revision-codex.md', '.\practica6\codigo\descuentos.py', '.\evidencia\practica6\hash-descuentos.txt', '.\ejemplo_revision.py') {
+    if (-not (Test-Path -LiteralPath $ruta)) { throw "Falta $ruta. Complete la práctica 9 antes de continuar." }
 }
+if (-not (Test-Path -LiteralPath '.\.git' -PathType Container)) { throw 'La carpeta no es el repositorio Git de las prácticas anteriores. No ejecute git init.' }
+$nombreSkill = @(Select-String -LiteralPath '.\SKILL.md' -Encoding utf8 -Pattern '^name:' | ForEach-Object { $_.Line.Trim() })
+$versionSkill = @(Select-String -LiteralPath '.\SKILL.md' -Encoding utf8 -Pattern '^version:' | ForEach-Object { $_.Line.Trim() })
+if ($nombreSkill.Count -ne 1 -or $nombreSkill[0] -ne 'name: consultar-estandares-tecnicos') { throw 'SKILL.md debe ser consultar-estandares-tecnicos.' }
+if ($versionSkill.Count -ne 1 -or $versionSkill[0] -ne 'version: 0.4.0') { throw "Esta práctica parte de version: 0.4.0 y no debe cambiarla. Se obtuvo: $($versionSkill -join ', ')." }
 if (-not (Select-String -LiteralPath '.\skills\investigacion-fallos-codex\SKILL.md' -Encoding utf8 -SimpleMatch -Pattern 'Workflow compuesto: API Gateway y agente de Amazon Bedrock' -Quiet)) { throw 'Falta el workflow compuesto de la práctica 9.' }
+if (Select-String -LiteralPath '.\evidencia\practica9\revision-codex.md' -Encoding utf8 -Pattern '\[DOCUMENTAR' -Quiet) { throw 'Complete revision-codex.md de la práctica 9 antes de continuar.' }
+if (-not (Select-String -LiteralPath '.\ejemplo_revision.py' -Encoding utf8 -SimpleMatch -Pattern '"verify_tls": True' -Quiet)) { throw 'ejemplo_revision.py debe seguir en la versión segura de la práctica 5.' }
+if ((Get-FileHash -LiteralPath '.\practica6\codigo\descuentos.py' -Algorithm SHA256).Hash -ne (Get-Content -LiteralPath '.\evidencia\practica6\hash-descuentos.txt' -Raw -Encoding utf8).Trim()) { throw 'descuentos.py no coincide con el hash de la práctica 6.' }
+if (Test-Path -LiteralPath '.\evidencia\practica10\bateria-pruebas.json' -PathType Leaf) { throw 'evidencia/practica10 ya contiene una batería. Conserve el trabajo previo o use un clon limpio del repositorio.' }
+
+if (-not (Get-Command git -ErrorAction SilentlyContinue)) { throw 'No se encontró Git 2.44.0 o posterior.' }
+$versionGit = [version]([regex]::Match((git --version), '\d+\.\d+\.\d+')).Value
+if ($versionGit -lt [version]'2.44.0') { throw "Git $versionGit es anterior a 2.44.0." }
+git --version
+
+$salidaPython = & py -3.12 --version 2>&1 | Out-String
+if ($LASTEXITCODE -ne 0) { throw 'No está disponible Python 3.12 mediante py -3.12.' }
+$versionPython = [version]([regex]::Match($salidaPython, '\d+\.\d+\.\d+')).Value
+if ($versionPython -lt [version]'3.12.1') { throw "Python $versionPython es anterior a 3.12.1." }
+Write-Output $salidaPython.Trim()
+
+if (-not (Get-Command curl.exe -ErrorAction SilentlyContinue)) { throw 'No se encontró curl.exe 8.7.1 o posterior.' }
+$versionCurl = [version]([regex]::Match((& curl.exe --version | Select-Object -First 1), '\d+\.\d+\.\d+')).Value
+if ($versionCurl -lt [version]'8.7.1') { throw "curl $versionCurl es anterior a 8.7.1." }
+curl.exe --version | Select-Object -First 1
+
+if (Get-Command codex -ErrorAction SilentlyContinue) {
+    codex --version
+} else {
+    Write-Output 'El comando codex no está en esta terminal. Use la interfaz de Codex o ChatGPT preparada por la organización.'
+}
+
 New-Item -ItemType Directory -Path '.\evidencia\practica10' -Force | Out-Null
-$identidad = [System.Security.Principal.WindowsIdentity]::GetCurrent().User
-$acl = [System.Security.AccessControl.DirectorySecurity]::new()
-$acl.SetOwner($identidad)
-$acl.SetAccessRuleProtection($true, $false)
-$acl.AddAccessRule([System.Security.AccessControl.FileSystemAccessRule]::new(
-    $identidad, 'FullControl', 'ContainerInherit, ObjectInherit', 'None', 'Allow'))
-Set-Acl -LiteralPath '.\evidencia\practica10' -AclObject $acl -ErrorAction Stop
+try {
+    $identidad = [System.Security.Principal.WindowsIdentity]::GetCurrent().User
+    $acl = [System.Security.AccessControl.DirectorySecurity]::new()
+    $acl.SetOwner($identidad)
+    $acl.SetAccessRuleProtection($true, $false)
+    $acl.AddAccessRule([System.Security.AccessControl.FileSystemAccessRule]::new(
+        $identidad, 'FullControl', 'ContainerInherit, ObjectInherit', 'None', 'Allow'))
+    Set-Acl -LiteralPath '.\evidencia\practica10' -AclObject $acl
+    Write-Output 'ACL aplicada a evidencia/practica10'
+} catch {
+    Write-Output 'No se pudo aplicar ACL personalizada. Use el directorio protegido preparado por el instructor si la política lo exige.'
+}
+$rutasProtegidas = @(
+    '.\SKILL.md', '.\skills\revision-codigo-codex\SKILL.md', '.\skills\generacion-pruebas-cambios\SKILL.md',
+    '.\practica6\codigo\descuentos.py', '.\evidencia\practica6\hash-descuentos.txt', '.\ejemplo_revision.py',
+    '.\evidencia\practica9\SKILL.antes-workflow-compuesto.md', '.\evidencia\practica8\SKILL.antes-api.md'
+)
+$rutaHashes = '.\evidencia\hashes-protegidos-practica10.txt'
+if (-not (Test-Path -LiteralPath $rutaHashes -PathType Leaf)) {
+    $existentes = @($rutasProtegidas | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf })
+    $lineasHash = foreach ($ruta in $existentes) { $ruta + '|' + (Get-FileHash -LiteralPath $ruta -Algorithm SHA256).Hash }
+    $lineasHash | Set-Content -LiteralPath $rutaHashes -Encoding utf8
+}
+foreach ($linea in Get-Content -LiteralPath $rutaHashes -Encoding utf8) {
+    if ([string]::IsNullOrWhiteSpace($linea)) { continue }
+    $partes = $linea.Split('|', 2)
+    if (-not (Test-Path -LiteralPath $partes[0] -PathType Leaf)) { continue }
+    if ((Get-FileHash -LiteralPath $partes[0] -Algorithm SHA256).Hash -ne $partes[1].Trim()) { throw "El archivo protegido ya cambió: $($partes[0])" }
+}
+git status --short --untracked-files=all
+Write-Output 'Línea base de la práctica 9 disponible para la batería simulada'
+```
+
+Confirme que no hay secretos en el repositorio:
+
+```powershell
+$base = (Get-Location).Path
+$nombres = @(Get-ChildItem -LiteralPath . -File -Recurse -Force | Where-Object { $_.FullName -notmatch '[\\/]\.git[\\/]' -and ($_.Name -eq '.env' -or $_.Extension -in '.pem', '.key', '.pfx', '.p12' -or $_.Name -like '*credential*') })
+if ($nombres.Count -gt 0) {
+    $nombres | ForEach-Object { $_.FullName.Substring($base.Length + 1).Replace('\', '/') }
+    throw 'Retire los archivos de credenciales antes de continuar.'
+}
+$textos = @(Get-ChildItem -LiteralPath . -File -Recurse | Where-Object { $_.FullName -notmatch '[\\/]\.git[\\/]' -and $_.Extension -in '.md', '.txt', '.json', '.yml', '.yaml', '.py' })
+if ($textos.Count -gt 0) {
+    $hallazgos = @(Select-String -LiteralPath $textos.FullName -Encoding utf8 -Pattern 'AKIA[0-9A-Z]{16}|(?i)(api[_-]?key|aws_access_key|secret|token|password)\s*[=:]\s*\S+')
+    if ($hallazgos.Count -gt 0) {
+        $hallazgos | ForEach-Object { $_.Path + ':' + $_.LineNumber }
+        throw 'Retire las credenciales detectadas en el contenido antes de continuar.'
+    }
+}
+Write-Output 'Sin credenciales embebidas detectadas'
 ```
 
 ## Instrucciones Paso a Paso
@@ -117,8 +201,12 @@ foreach ($ruta in '.\evidencia\practica10\skill-antes.md', '.\evidencia\practica
     if (Test-Path -LiteralPath $ruta) { throw "La evidencia inicial ya existe: $ruta. Consérvela antes de repetir este paso." }
 }
 Copy-Item -LiteralPath '.\skills\investigacion-fallos-codex\SKILL.md' -Destination '.\evidencia\practica10\skill-antes.md'
-$jsonConfiguracion = py -3.12 -m json.tool '.\evidencia\practica9\workflow-config.json'
-if ($LASTEXITCODE -ne 0) { throw 'La configuración heredada no es JSON válido.' }
+$preferenciaAnterior = $PSNativeCommandUseErrorActionPreference
+$PSNativeCommandUseErrorActionPreference = $false
+$jsonConfiguracion = & py -3.12 -m json.tool '.\evidencia\practica9\workflow-config.json' 2>&1
+$codigoJson = $LASTEXITCODE
+$PSNativeCommandUseErrorActionPreference = $preferenciaAnterior
+if ($codigoJson -ne 0) { throw 'La configuración heredada no es JSON válido.' }
 $jsonConfiguracion | Set-Content -LiteralPath '.\evidencia\practica10\workflow-config-formateado.json' -Encoding utf8
 Copy-Item -LiteralPath '.\evidencia\practica9\matriz-responsabilidades.md' -Destination '.\evidencia\practica10\matriz-responsabilidades-consultada.md'
 Copy-Item -LiteralPath '.\evidencia\practica9\versionamiento.md' -Destination '.\evidencia\practica10\versionamiento-anterior.md'
@@ -407,8 +495,12 @@ if (Test-Path -LiteralPath '.\evidencia\practica10\bateria-pruebas.json') { thro
   ]
 }
 '@ | Set-Content -LiteralPath '.\evidencia\practica10\bateria-pruebas.json' -Encoding utf8
-py -3.12 -m json.tool '.\evidencia\practica10\bateria-pruebas.json' | Out-Null
-if ($LASTEXITCODE -ne 0) { throw 'JSON de batería inválido.' }
+$preferenciaAnterior = $PSNativeCommandUseErrorActionPreference
+$PSNativeCommandUseErrorActionPreference = $false
+& py -3.12 -m json.tool '.\evidencia\practica10\bateria-pruebas.json' 2>&1 | Out-Null
+$codigoJson = $LASTEXITCODE
+$PSNativeCommandUseErrorActionPreference = $preferenciaAnterior
+if ($codigoJson -ne 0) { throw 'JSON de batería inválido.' }
 Write-Output 'JSON de batería válido'
 ```
 
@@ -543,8 +635,12 @@ with output_path.open("w", encoding="utf-8") as target:
 print(json.dumps(report, ensure_ascii=False, indent=2))
 raise SystemExit(0 if not errors else 1)
 '@ | Set-Content -LiteralPath '.\evidencia\practica10\validar_bateria.py' -Encoding utf8
-py -3.12 -B '.\evidencia\practica10\validar_bateria.py' '.\evidencia\practica10\bateria-pruebas.json' '.\evidencia\practica10\resultado-validacion-estructural.json'
+$preferenciaAnterior = $PSNativeCommandUseErrorActionPreference
+$PSNativeCommandUseErrorActionPreference = $false
+& py -3.12 -B '.\evidencia\practica10\validar_bateria.py' '.\evidencia\practica10\bateria-pruebas.json' '.\evidencia\practica10\resultado-validacion-estructural.json'
 $codigoValidacion = $LASTEXITCODE
+$PSNativeCommandUseErrorActionPreference = $preferenciaAnterior
+if ($codigoValidacion -gt 1) { throw 'El validador no pudo procesar la batería. Revise el error antes de continuar.' }
 if ($codigoValidacion -ne 0) { throw 'La batería no pasó la validación estructural. Revise el informe antes de continuar.' }
 ```
 
@@ -555,8 +651,12 @@ El informe termina con `"validation": "PASS"` y `"cases_found": 6`.
 **Verificación**
 
 ```powershell
-py -3.12 -m json.tool '.\evidencia\practica10\resultado-validacion-estructural.json'
-if ($LASTEXITCODE -ne 0) { throw 'El informe no contiene JSON válido.' }
+$preferenciaAnterior = $PSNativeCommandUseErrorActionPreference
+$PSNativeCommandUseErrorActionPreference = $false
+& py -3.12 -m json.tool '.\evidencia\practica10\resultado-validacion-estructural.json' 2>&1 | Out-Null
+$codigoJson = $LASTEXITCODE
+$PSNativeCommandUseErrorActionPreference = $preferenciaAnterior
+if ($codigoJson -ne 0) { throw 'El informe no contiene JSON válido.' }
 $resultado = Get-Content -LiteralPath '.\evidencia\practica10\resultado-validacion-estructural.json' -Raw -Encoding utf8 | ConvertFrom-Json
 if ($resultado.validation -ne 'PASS' -or $resultado.cases_found -ne 6) { throw 'La batería no aprobó los seis casos estructurales.' }
 Write-Output 'PASS: 6 casos estructuralmente válidos; pendiente evaluación de respuestas del modelo'
@@ -584,7 +684,7 @@ Use esta plantilla para cada archivo `respuesta-P10-XX-antes.md`. Complete los v
 
 - Fecha y hora: [registrar]
 - Versión de Skill observada: [registrar]
-- Plataforma y modelo: [VERSIÓN POR VALIDAR]
+- Plataforma y modelo: [registrar edición asignada por la organización]
 - Tipo de prueba: [positive, negative, ambiguous, integration-negative, integration-failure o adversarial]
 - Modo: simulación controlada; no se ejecutaron llamadas reales a AWS.
 - Activación observada: [sí / no / solicita aclaración / detención segura]
@@ -688,8 +788,12 @@ Añada el resultado real al final de `evidencia/practica9/versionamiento.md`:
 
 ```powershell
 git diff -- skills/investigacion-fallos-codex/SKILL.md evidencia/practica9/versionamiento.md
-git diff --no-index -- '.\evidencia\practica10\SKILL.md-respaldo-antes-ajuste.md' '.\skills\investigacion-fallos-codex\SKILL.md'
-if ($LASTEXITCODE -gt 1) { throw 'No se pudo comparar la Skill con el respaldo.' }
+$preferenciaAnterior = $PSNativeCommandUseErrorActionPreference
+$PSNativeCommandUseErrorActionPreference = $false
+git --no-pager diff --no-index -- '.\evidencia\practica10\SKILL.md-respaldo-antes-ajuste.md' '.\skills\investigacion-fallos-codex\SKILL.md'
+$codigoDiff = $LASTEXITCODE
+$PSNativeCommandUseErrorActionPreference = $preferenciaAnterior
+if ($codigoDiff -gt 1) { throw "No se pudo comparar la Skill con el respaldo. Código $codigoDiff." }
 Select-String -LiteralPath '.\evidencia\practica9\versionamiento.md' -Encoding utf8 -Pattern '0\.2\.[01]|evidencia|valid|ambig|inesperad|no confiable|extern'
 ```
 
@@ -750,6 +854,50 @@ if (-not (Test-Path -LiteralPath '.\evidencia\practica10\comparacion-antes-despu
 Write-Output 'Comparación disponible; revise su contenido y los resultados reales'
 ```
 
+Ejecute la validación determinista consolidada antes de solicitar aprobación humana:
+
+```powershell
+foreach ($ruta in '.\evidencia\practica10\bateria-pruebas.json', '.\evidencia\practica10\validar_bateria.py', '.\evidencia\practica10\resultado-validacion-estructural.json', '.\evidencia\practica10\skill-antes.md', '.\evidencia\practica10\comparacion-antes-despues.md') {
+    if (-not (Test-Path -LiteralPath $ruta -PathType Leaf)) { throw "Falta $ruta" }
+}
+$preferenciaAnterior = $PSNativeCommandUseErrorActionPreference
+$PSNativeCommandUseErrorActionPreference = $false
+& py -3.12 -B '.\evidencia\practica10\validar_bateria.py' '.\evidencia\practica10\bateria-pruebas.json' '.\evidencia\practica10\resultado-validacion-estructural.json'
+$codigoValidacion = $LASTEXITCODE
+$PSNativeCommandUseErrorActionPreference = $preferenciaAnterior
+if ($codigoValidacion -ne 0) { throw 'La batería no pasa la validación estructural.' }
+$resultado = Get-Content -LiteralPath '.\evidencia\practica10\resultado-validacion-estructural.json' -Raw -Encoding utf8 | ConvertFrom-Json
+if ($resultado.validation -ne 'PASS' -or $resultado.cases_found -ne 6) { throw 'Se esperaban 6 casos con validation PASS.' }
+foreach ($caseId in '01', '02', '03', '04', '05', '06') {
+    foreach ($fase in 'antes', 'despues') {
+        $ruta = ".\evidencia\practica10\respuesta-P10-$caseId-$fase.md"
+        if (-not (Test-Path -LiteralPath $ruta -PathType Leaf)) { throw "Falta $ruta. Complete la ejecución simulada del paso 4 o 6." }
+        $texto = Get-Content -LiteralPath $ruta -Raw -Encoding utf8
+        if ($texto -match '\[registrar\]|\[VERSIÓN') { throw "Complete los marcadores pendientes en $ruta" }
+        if ($texto -notmatch 'Veredicto determinista:\s*(APROBADO|RECHAZADO|NO EJECUTADO)') { throw "Falta veredicto determinista en $ruta" }
+    }
+}
+$comparacion = Get-Content -LiteralPath '.\evidencia\practica10\comparacion-antes-despues.md' -Raw -Encoding utf8
+if ($comparacion -match '\[registrar\]') { throw 'Complete comparacion-antes-despues.md con los veredictos reales.' }
+if (-not (Select-String -LiteralPath '.\evidencia\practica9\versionamiento.md' -Encoding utf8 -Pattern 'practica10|Práctica 10|0\.2\.[01]' -Quiet)) { throw 'Añada al versionamiento el resultado de la batería de la práctica 10.' }
+if ((Get-FileHash -LiteralPath '.\practica6\codigo\descuentos.py' -Algorithm SHA256).Hash -ne (Get-Content -LiteralPath '.\evidencia\practica6\hash-descuentos.txt' -Raw -Encoding utf8).Trim()) { throw 'descuentos.py no debe cambiar en esta práctica.' }
+if (Test-Path -LiteralPath '.\evidencia\hashes-protegidos-practica10.txt' -PathType Leaf) {
+    foreach ($linea in Get-Content -LiteralPath '.\evidencia\hashes-protegidos-practica10.txt' -Encoding utf8) {
+        if ([string]::IsNullOrWhiteSpace($linea)) { continue }
+        $partes = $linea.Split('|', 2)
+        if (-not (Test-Path -LiteralPath $partes[0] -PathType Leaf)) { continue }
+        if ((Get-FileHash -LiteralPath $partes[0] -Algorithm SHA256).Hash -ne $partes[1].Trim()) { throw "Cambio fuera del alcance: $($partes[0])" }
+    }
+}
+$preferenciaAnterior = $PSNativeCommandUseErrorActionPreference
+$PSNativeCommandUseErrorActionPreference = $false
+git diff --check
+$codigoCheck = $LASTEXITCODE
+$PSNativeCommandUseErrorActionPreference = $preferenciaAnterior
+if ($codigoCheck -ne 0) { throw 'git diff --check encontró espacios en blanco o marcadores de conflicto.' }
+Write-Output 'Validación determinista de la práctica completada; pendiente aprobación humana'
+```
+
 ## Validación y Pruebas
 
 La validación combina controles deterministas y evaluación semántica. No se considera suficiente que una respuesta “parezca útil”; debe respetar el contrato, los límites de seguridad y la evidencia disponible.
@@ -795,14 +943,36 @@ Aplique esta rúbrica semántica al caso P10-01 y, cuando corresponda, a los dem
 - **Causa probable:** las instrucciones persistentes de `SKILL.md` no priorizan explícitamente la validación previa, la detención segura o el tratamiento de contenido externo como dato no confiable.
 - **Solución:** conserve el respaldo, añada una regla clara en `SKILL.md` para validar antes de consultar, detenerse ante contrato inválido y rechazar instrucciones incrustadas. Actualice `versionamiento.md`, repita el caso afectado y ejecute regresión de los seis casos antes de solicitar aprobación humana.
 
+**Problema 3: PowerShell responde `White space is not allowed before the string terminator`**
+
+- **Causa:** El cierre `'@` no está al inicio de su línea.
+- **Solución:** Vuelva a copiar el bloque completo del paso 2, 3 o 6, sin sangría delante de `'@`.
+
+**Problema 4: El prep indica que falta la práctica 9 o que `evidencia/practica10` ya existe**
+
+- **Causa:** No terminó la práctica 9, falta `revision-codex.md` completo o ya ejecutó la práctica 10 sobre la misma carpeta.
+- **Solución:** Complete la práctica 9. Si repite la práctica 10, conserve la evidencia existente o restaure desde Git solo si el instructor lo autoriza.
+
+**Problema 5: `Set-Acl` falla al proteger `evidencia/practica10`**
+
+- **Causa:** La política institucional impide cambiar ACL en ese directorio.
+- **Solución:** Use el directorio protegido preparado por el instructor. El mensaje del prep indica si la ACL no se aplicó; la práctica puede continuar si el instructor confirma la ubicación.
+
 ## Limpieza
 
 Conserve la evidencia, la comparación y el historial de cambios para revisión. No elimine los resultados de pruebas ni el respaldo de la Skill hasta que la persona responsable haya tomado una decisión.
 
 ```powershell
-git status --short
+git status --short --untracked-files=all
+$preferenciaAnterior = $PSNativeCommandUseErrorActionPreference
+$PSNativeCommandUseErrorActionPreference = $false
 git diff --check
+$codigoCheck = $LASTEXITCODE
+$PSNativeCommandUseErrorActionPreference = $preferenciaAnterior
+if ($codigoCheck -ne 0) { throw 'git diff --check encontró espacios en blanco o marcadores de conflicto.' }
 git diff -- skills/investigacion-fallos-codex/SKILL.md evidencia/practica9/versionamiento.md evidencia/practica10/
+$base = (Get-Location).Path
+Get-ChildItem -LiteralPath '.\evidencia\practica10' -File | Sort-Object Name | ForEach-Object { $_.FullName.Substring($base.Length + 1).Replace('\', '/') }
 ```
 
 Si creó archivos temporales fuera de `evidencia/practica10/`, elimínelos únicamente después de confirmar que no contienen evidencia requerida. No elimine recursos de AWS, no revoque credenciales y no realice cambios administrativos como parte de esta práctica.
